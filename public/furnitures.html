@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Furnitures - Olatech Properties & Assets</title>
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+    <main class="container">
+        <section class="section">
+            <h2>Furnitures</h2>
+            <div class="grid" id="grid-furnitures"></div>
+        </section>
+    </main>
+    <script src="/main.js"></script>
+    <script>
+      window.__PAGE__='furnitures';
+      (function(){
+        const params = new URLSearchParams(location.search);
+        const type = params.get('type');
+        if (type === 'home' || type === 'office') {
+          window.__FURN_SUB__ = type;
+        }
+      })();
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,39 @@
+<header class="site-header">
+    <div class="brand"><img src="/assets/logo.svg" alt="Olatech logo"> Olatech Properties &amp; Assets</div>
+    <div class="header-center">
+        <input id="search" class="search" type="search" placeholder="Search products..." />
+        <nav class="nav">
+            <a href="/land.html" class="nav-link">Land</a>
+            <a href="/properties.html" class="nav-link">Properties</a>
+            <div class="nav-dropdown">
+                <a href="/furnitures.html" class="nav-link" data-menu="furnitures">Furnitures ▾</a>
+                <div class="dropdown" id="menu-furnitures">
+                    <a href="/furnitures.html?type=home" class="dropdown-item">Home Furniture</a>
+                    <a href="/furnitures.html?type=office" class="dropdown-item">Office Furniture</a>
+                </div>
+            </div>
+            <a href="/auto.html" class="nav-link">Auto</a>
+            <a href="/contact.html" class="nav-link">Contact</a>
+        </nav>
+    </div>
+    <div class="header-right">
+        <a class="nav-link cart-link" href="/cart.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h3l2.68 12.39a2 2 0 002 1.61h9.72a2 2 0 001.99-1.72L21 6H6"/></svg>Cart <span id="cart-count" class="badge">0</span></a>
+        <a class="cta whatsapp" href="https://wa.me/2348036122868" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+</header>
+<script>
+  (function(){
+    document.addEventListener('click', function(e){
+      const link = e.target.closest('[data-menu="furnitures"]');
+      const menu = document.getElementById('menu-furnitures');
+      if (link && menu) {
+        e.preventDefault();
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+      } else if (menu && !e.target.closest('.nav-dropdown')) {
+        menu.style.display = '';
+      }
+    });
+  })();
+</script>
+
+

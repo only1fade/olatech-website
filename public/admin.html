@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Olatech Properties & Assets</title>
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+    <main class="container">
+        <section id="admin" class="section">
+            <h2>Admin Upload</h2>
+            <form id="admin-form" enctype="multipart/form-data">
+                <div class="form-row">
+                    <label>Title</label>
+                    <input required name="title" />
+                </div>
+                <div class="form-row">
+                    <label>Description</label>
+                    <textarea name="description"></textarea>
+                </div>
+                <div class="form-row">
+                    <label>Price (NGN)</label>
+                    <input required name="price" type="number" min="0" step="0.01" />
+                </div>
+                <div class="form-row">
+                    <label>Category</label>
+                    <select required name="category" id="admin-category">
+                        <option value="land">Land</option>
+                        <option value="properties">Properties</option>
+                        <option value="furnitures">Furnitures</option>
+                        <option value="auto">Auto</option>
+                    </select>
+                </div>
+                <div class="form-row hidden" id="admin-subcat-row">
+                    <label>Furniture Subcategory</label>
+                    <select name="subCategory" id="admin-subCategory">
+                        <option value="">Select type</option>
+                        <option value="home">Home Furniture</option>
+                        <option value="office">Office Furniture</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Image</label>
+                    <input type="file" name="image" accept="image/*" />
+                </div>
+                <div class="form-row">
+                    <label>Admin Password</label>
+                    <input required name="password" type="password" placeholder="admin123" />
+                </div>
+                <button class="btn" type="submit">Upload</button>
+                <div id="admin-status"></div>
+            </form>
+        </section>
+
+        <section id="manage-products" class="section">
+            <h2>Manage Products</h2>
+            <div class="form-row">
+                <label>Search Products</label>
+                <input type="text" id="product-search" placeholder="Search by title..." />
+            </div>
+            <div id="product-list-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Price</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list"></tbody>
+                </table>
+                <button id="show-more-btn" class="btn" style="display: none;">Show More</button>
+            </div>
+        </section>
+    </main>
+    <script src="/main.js"></script>
+</body>
+</html>
