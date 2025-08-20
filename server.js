@@ -6,7 +6,6 @@ const { neon } = require('@netlify/neon');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 const sql = neon();
 
 // Middlewares
@@ -211,7 +210,7 @@ app.get('*', (req, res, next) => {
   next();
 });
 
-app.listen(PORT, async () => {
-    await setupDatabase();
-    console.log(`Olatech Properties & Assets running on http://localhost:${PORT}`);
-});
+setupDatabase();
+
+module.exports = app;
+
