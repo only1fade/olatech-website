@@ -63,8 +63,8 @@ app.get('/api/products', async (req, res) => {
     }
 
     const productsWithImages = products.map(product => {
-        if (product.imageurl && product.imagemimetype) {
-            product.imageUrl = `data:${product.imagemimetype};base64,${Buffer.from(product.imageurl).toString('base64')}`;
+        if (product.imageUrl && product.imageMimeType) {
+            product.imageUrl = `data:${product.imageMimeType};base64,${Buffer.from(product.imageUrl).toString('base64')}`;
         }
         return product;
     });
