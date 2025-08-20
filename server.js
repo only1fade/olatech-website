@@ -33,11 +33,19 @@ async function setupDatabase() {
             price NUMERIC NOT NULL,
             category TEXT NOT NULL,
             subCategory TEXT,
-            imageUrl TEXT,
+            imageUrl BYTEA,
+            imageMimeType TEXT,
             status TEXT DEFAULT 'available',
             createdAt TIMESTAMP DEFAULT current_timestamp
         );
     `;
+    // Add imageUrl and imageMimeType columns if they don't exist
+    try {
+        await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS imageUrl BYTEA`;
+        await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS imageMimeType TEXT`;
+    } catch (e) {
+        // ignore if columns already exist
+    }
 }
 
 // API: Products
@@ -54,7 +62,14 @@ app.get('/api/products', async (req, res) => {
         products = products.filter(p => p.subcategory === subCategory);
     }
 
-    res.json(products);
+    const productsWithImages = products.map(product => {
+        if (product.imageurl && product.imagemimetype) {
+            product.imageUrl = `data:${product.imagemimetype};base64,${Buffer.from(product.imageurl).toString('base64')}`;
+        }
+        return product;
+    });
+
+    res.json(productsWithImages);
 });
 
 // Admin: Create product
@@ -68,9 +83,19 @@ app.post('/api/admin/products', async (req, res) => {
         const { title, description, price, category, subCategory, image } = req.body;
         const id = uuidv4();
 
+        let imageBuffer = null;
+        let imageMimeType = null;
+        if (image) {
+            const match = image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+            if (match) {
+                imageMimeType = match[1];
+                imageBuffer = Buffer.from(match[2], 'base64');
+            }
+        }
+
         await sql`
-            INSERT INTO products (id, title, description, price, category, subCategory, imageUrl)
-            VALUES (${id}, ${title}, ${description}, ${price}, ${category}, ${subCategory}, ${image})
+            INSERT INTO products (id, title, description, price, category, subCategory, imageUrl, imageMimeType)
+            VALUES (${id}, ${title}, ${description}, ${price}, ${category}, ${subCategory}, ${imageBuffer}, ${imageMimeType})
         `;
 
         res.status(201).json({ id });
@@ -91,9 +116,19 @@ app.put('/api/admin/products/:id', async (req, res) => {
         const { id } = req.params;
         const { title, description, price, category, subCategory, image } = req.body;
 
+        let imageBuffer = null;
+        let imageMimeType = null;
+        if (image) {
+            const match = image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+            if (match) {
+                imageMimeType = match[1];
+                imageBuffer = Buffer.from(match[2], 'base64');
+            }
+        }
+
         await sql`
             UPDATE products
-            SET title = ${title}, description = ${description}, price = ${price}, category = ${category}, subCategory = ${subCategory}, imageUrl = ${image}
+            SET title = ${title}, description = ${description}, price = ${price}, category = ${category}, subCategory = ${subCategory}, imageUrl = ${imageBuffer}, imageMimeType = ${imageMimeType}
             WHERE id = ${id}
         `;
 
