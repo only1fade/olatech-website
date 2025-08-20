@@ -26,6 +26,7 @@ function productCard(product) {
             <div><strong>${product.title}</strong></div>
             <div class="price">${formatCurrency(product.price)}</div>
             <div style="min-height: 42px; color: #94a3b8">${product.description || ''}</div>
+            <div style="font-size: 10px; word-break: break-all;">${(product.imageUrl || '').substring(0, 80)}</div>
             <button class="btn" data-add="${product.id}">Add to cart</button>
         </div>
     `;
