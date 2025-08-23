@@ -2,8 +2,9 @@ async function fetchProducts(category) {
     const params = new URLSearchParams();
     if (category) params.set('category', category);
     if (typeof window !== 'undefined' && window.__FURN_SUB__) params.set('subCategory', window.__FURN_SUB__);
+    params.set('t', new Date().getTime());
     const qs = params.toString();
-    const url = qs ? `/api/products?${qs}` : '/api/products';
+    const url = `/api/products?${qs}`;
     const res = await fetch(url);
     return res.json();
 }
