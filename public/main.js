@@ -5,8 +5,18 @@ async function fetchProducts(category) {
     params.set('t', new Date().getTime());
     const qs = params.toString();
     const url = `/api/products?${qs}`;
-    const res = await fetch(url);
-    return res.json();
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            console.error('Failed to fetch products:', res.status, await res.text());
+            return [];
+        }
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return [];
+    }
 }
 
 function formatCurrency(amount) {
@@ -212,7 +222,7 @@ function setupAdminProductSearch() {
 }
 
 function setupShowMoreButton() {
-    const showMoreBtn = document.getElementById('show-more-btn');
+    const showMoreBtn = document.getElementById('show-more-.btn');
     if (!showMoreBtn) return;
 
     showMoreBtn.addEventListener('click', () => {
@@ -537,8 +547,7 @@ async function injectHeaderFooterIfMissing() {
 
 let allProductsCache = [];
 async function loadAllProducts() {
-    const res = await fetch('/api/products');
-    allProductsCache = await res.json();
+    allProductsCache = await fetchProducts();
     return allProductsCache;
 }
 
