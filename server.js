@@ -54,17 +54,19 @@ app.get('/api/products', async (req, res) => {
         const { category, subCategory } = req.query;
         let products;
         if (category) {
-            products = await sql`SELECT * FROM products WHERE category = ${category}`;
+            products = await sql`SELECT id, title, description, price, category, subCategory, "imageMimeType", LENGTH("imageUrl") as imageSize FROM products WHERE category = ${category}`;
         } else {
-            products = await sql`SELECT * FROM products`;
+            products = await sql`SELECT id, title, description, price, category, subCategory, "imageMimeType", LENGTH("imageUrl") as imageSize FROM products`;
         }
 
         if (subCategory) {
             products = products.filter(p => p.subcategory === subCategory);
         }
 
+        console.log('Products retrieved from DB:', products.map(p => ({ ...p, imageUrl: `(size: ${p.imagesize})` })));
+
         const productsWithImages = products.map(product => {
-            if (product.imageUrl && product.imageMimeType) {
+            if (product.imagesize && product.imageMimeType) {
                 product.imageUrl = `data:${product.imageMimeType};base64,${Buffer.from(product.imageUrl).toString('base64')}`;
             }
             return product;
