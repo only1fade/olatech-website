@@ -31,8 +31,27 @@ function productCard(product) {
     const div = document.createElement('div');
     div.className = 'card';
     div.setAttribute('data-animate', 'reveal');
+    
+    // Handle image URL more robustly
+    let imageUrl = 'https://via.placeholder.com/400x300?text=Olatech';
+    if (product.imageUrl) {
+        // Make sure the image URL is properly formatted
+        if (typeof product.imageUrl === 'string') {
+            if (product.imageUrl.startsWith('data:')) {
+                imageUrl = product.imageUrl;
+            } else {
+                // Try to handle case where it might be a raw base64 string
+                try {
+                    imageUrl = `data:${product.imageMimeType || 'image/jpeg'};base64,${product.imageUrl}`;
+                } catch (e) {
+                    console.error('Failed to process image URL:', e);
+                }
+            }
+        }
+    }
+    
     div.innerHTML = `
-        <img src="${product.imageUrl || 'https://via.placeholder.com/400x300?text=Olatech'}" alt="${product.title}">
+        <img src="${imageUrl}" alt="${product.title}" onerror="this.src='https://via.placeholder.com/400x300?text=Olatech'">
         <div class="content">
             <div><strong>${product.title}</strong></div>
             <div class="price">${formatCurrency(product.price)}</div>

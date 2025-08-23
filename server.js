@@ -76,8 +76,19 @@ app.get('/api/products', async (req, res) => {
         })));
 
         const productsWithImages = filteredProducts.map(product => {
-            if (product.imageUrl && product.imageMimeType) {
-                product.imageUrl = `data:${product.imageMimeType};base64,${Buffer.from(product.imageUrl).toString('base64')}`;
+            // Check if imageUrl exists and is a Buffer or Uint8Array
+            if (product.imageUrl) {
+                // Handle both Buffer and string cases for compatibility
+                const imageBuffer = Buffer.isBuffer(product.imageUrl) ? 
+                    product.imageUrl : 
+                    (typeof product.imageUrl === 'string' && product.imageUrl.startsWith('data:') ? 
+                        product.imageUrl : 
+                        Buffer.from(product.imageUrl));
+                
+                // Only convert to base64 if it's not already a data URL
+                if (Buffer.isBuffer(imageBuffer) || (typeof imageBuffer !== 'string' || !imageBuffer.startsWith('data:'))) {
+                    product.imageUrl = `data:${product.imageMimeType || 'image/jpeg'};base64,${Buffer.from(imageBuffer).toString('base64')}`;
+                }
             }
             return product;
         });
@@ -103,10 +114,21 @@ app.post('/api/admin/products', async (req, res) => {
         let imageBuffer = null;
         let imageMimeType = null;
         if (image) {
+            // Handle both data URL and raw base64 formats
             const match = image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
             if (match) {
                 imageMimeType = match[1];
                 imageBuffer = Buffer.from(match[2], 'base64');
+                console.log('Image processed from data URL, size:', imageBuffer.length);
+            } else if (typeof image === 'string') {
+                // Try to parse as base64 directly
+                try {
+                    imageBuffer = Buffer.from(image, 'base64');
+                    imageMimeType = 'image/jpeg'; // Default if not specified
+                    console.log('Image processed from raw base64, size:', imageBuffer.length);
+                } catch (e) {
+                    console.error('Failed to process image:', e);
+                }
             }
         }
 
@@ -136,10 +158,21 @@ app.put('/api/admin/products/:id', async (req, res) => {
         let imageBuffer = null;
         let imageMimeType = null;
         if (image) {
+            // Handle both data URL and raw base64 formats
             const match = image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
             if (match) {
                 imageMimeType = match[1];
                 imageBuffer = Buffer.from(match[2], 'base64');
+                console.log('Update: Image processed from data URL, size:', imageBuffer.length);
+            } else if (typeof image === 'string') {
+                // Try to parse as base64 directly
+                try {
+                    imageBuffer = Buffer.from(image, 'base64');
+                    imageMimeType = 'image/jpeg'; // Default if not specified
+                    console.log('Update: Image processed from raw base64, size:', imageBuffer.length);
+                } catch (e) {
+                    console.error('Failed to process image during update:', e);
+                }
             }
         }
 
