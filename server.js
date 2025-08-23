@@ -25,51 +25,56 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Database setup
 async function setupDatabase() {
-    await sql`
-        CREATE TABLE IF NOT EXISTS products (
-            id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
-            price NUMERIC NOT NULL,
-            category TEXT NOT NULL,
-            subCategory TEXT,
-            imageUrl BYTEA,
-            imageMimeType TEXT,
-            status TEXT DEFAULT 'available',
-            createdAt TIMESTAMP DEFAULT current_timestamp
-        );
-    `;
-    // Add imageUrl and imageMimeType columns if they don't exist
     try {
+        await sql`
+            CREATE TABLE IF NOT EXISTS products (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT,
+                price NUMERIC NOT NULL,
+                category TEXT NOT NULL,
+                subCategory TEXT,
+                imageUrl BYTEA,
+                imageMimeType TEXT,
+                status TEXT DEFAULT 'available',
+                createdAt TIMESTAMP DEFAULT current_timestamp
+            );
+        `;
+        // Add imageUrl and imageMimeType columns if they don't exist
         await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS imageUrl BYTEA`;
         await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS imageMimeType TEXT`;
     } catch (e) {
-        // ignore if columns already exist
+        console.error('Error setting up database:', e);
     }
 }
 
 // API: Products
 app.get('/api/products', async (req, res) => {
-    const { category, subCategory } = req.query;
-    let products;
-    if (category) {
-        products = await sql`SELECT * FROM products WHERE category = ${category}`;
-    } else {
-        products = await sql`SELECT * FROM products`;
-    }
-
-    if (subCategory) {
-        products = products.filter(p => p.subcategory === subCategory);
-    }
-
-    const productsWithImages = products.map(product => {
-        if (product.imageUrl && product.imageMimeType) {
-            product.imageUrl = `data:${product.imageMimeType};base64,${Buffer.from(product.imageUrl).toString('base64')}`;
+    try {
+        const { category, subCategory } = req.query;
+        let products;
+        if (category) {
+            products = await sql`SELECT * FROM products WHERE category = ${category}`;
+        } else {
+            products = await sql`SELECT * FROM products`;
         }
-        return product;
-    });
 
-    res.json(productsWithImages);
+        if (subCategory) {
+            products = products.filter(p => p.subcategory === subCategory);
+        }
+
+        const productsWithImages = products.map(product => {
+            if (product.imageUrl && product.imageMimeType) {
+                product.imageUrl = `data:${product.imageMimeType};base64,${Buffer.from(product.imageUrl).toString('base64')}`;
+            }
+            return product;
+        });
+
+        res.json(productsWithImages);
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Failed to fetch products' });
+    }
 });
 
 // Admin: Create product
@@ -100,7 +105,7 @@ app.post('/api/admin/products', async (req, res) => {
 
         res.status(201).json({ id });
     } catch (error) {
-        console.error(error);
+        console.error('Error creating product:', error);
         res.status(500).json({ error: 'Failed to create product' });
     }
 });
@@ -134,7 +139,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
 
         res.json({ id });
     } catch (error) {
-        console.error(error);
+        console.error('Error updating product:', error);
         res.status(500).json({ error: 'Failed to update product' });
     }
 });
@@ -157,7 +162,7 @@ app.post('/api/admin/products/:id/sold', async (req, res) => {
 
         res.json({ id });
     } catch (error) {
-        console.error(error);
+        console.error('Error marking product as sold:', error);
         res.status(500).json({ error: 'Failed to update product' });
     }
 });
@@ -179,7 +184,7 @@ app.delete('/api/admin/products/:id', async (req, res) => {
 
         res.json({ ok: true });
     } catch (error) {
-        console.error(error);
+        console.error('Error deleting product:', error);
         res.status(500).json({ error: 'Failed to delete product' });
     }
 });
@@ -198,20 +203,25 @@ app.get('/api/cart', (req, res) => {
 
 // API: Add to cart
 app.post('/api/cart/add', async (req, res) => {
-  const { productId, quantity } = req.body;
-  if (!productId) return res.status(400).json({ error: 'productId is required' });
-  const qty = Math.max(1, Number(quantity || 1));
-  const [product] = await sql`SELECT * FROM products WHERE id = ${productId}`;
-  if (!product) return res.status(404).json({ error: 'Product not found' });
+    try {
+        const { productId, quantity } = req.body;
+        if (!productId) return res.status(400).json({ error: 'productId is required' });
+        const qty = Math.max(1, Number(quantity || 1));
+        const [product] = await sql`SELECT * FROM products WHERE id = ${productId}`;
+        if (!product) return res.status(404).json({ error: 'Product not found' });
 
-  const cart = ensureCart(req);
-  const existing = cart.find((i) => i.product.id === productId);
-  if (existing) {
-    existing.quantity += qty;
-  } else {
-    cart.push({ product, quantity: qty });
-  }
-  res.json(cart);
+        const cart = ensureCart(req);
+        const existing = cart.find((i) => i.product.id === productId);
+        if (existing) {
+            existing.quantity += qty;
+        } else {
+            cart.push({ product, quantity: qty });
+        }
+        res.json(cart);
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        res.status(500).json({ error: 'Failed to add to cart' });
+    }
 });
 
 // API: Update cart item quantity
