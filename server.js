@@ -3,10 +3,13 @@ const path = require('path');
 const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
 const { neon } = require('@netlify/neon');
+const multer = require('multer'); // Added for multipart upload support
 require('dotenv').config();
 
 const app = express();
 const sql = neon();
+// Multer config: store file buffer in memory, max size ~8MB
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 // Middlewares
 app.use(express.json({ limit: '10mb' }));
@@ -100,31 +103,37 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// Admin: Create product
-app.post('/api/admin/products', async (req, res) => {
+// Admin: Create product (supports both JSON and multipart/form-data)
+app.post('/api/admin/products', upload.single('imageFile'), async (req, res) => {
     try {
+        // Use correct body for both JSON and multipart
+        const body = req.body || {};
         const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-        if (req.body.password !== adminPassword) {
+        if (body.password !== adminPassword) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
-
-        const { title, description, price, category, subCategory, image } = req.body;
+        const { title, description, price, category, subCategory, image } = body;
         const id = uuidv4();
 
         let imageBuffer = null;
         let imageMimeType = null;
-        if (image) {
-            // Handle both data URL and raw base64 formats
+
+        // Priority: Accept buffer from file upload (multipart)
+        if (req.file && req.file.buffer) {
+            imageBuffer = req.file.buffer;
+            imageMimeType = req.file.mimetype || 'image/jpeg';
+            console.log('Image uploaded using multipart:', req.file.originalname, imageMimeType, ', size:', imageBuffer.length);
+        } else if (image) {
+            // Fallback to legacy JSON data URL or base64
             const match = image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
             if (match) {
                 imageMimeType = match[1];
                 imageBuffer = Buffer.from(match[2], 'base64');
                 console.log('Image processed from data URL, size:', imageBuffer.length);
             } else if (typeof image === 'string') {
-                // Try to parse as base64 directly
                 try {
                     imageBuffer = Buffer.from(image, 'base64');
-                    imageMimeType = 'image/jpeg'; // Default if not specified
+                    imageMimeType = 'image/jpeg';
                     console.log('Image processed from raw base64, size:', imageBuffer.length);
                 } catch (e) {
                     console.error('Failed to process image:', e);
@@ -144,31 +153,34 @@ app.post('/api/admin/products', async (req, res) => {
     }
 });
 
-// Admin: Update product
-app.put('/api/admin/products/:id', async (req, res) => {
+// Admin: Update product (supports both JSON and multipart/form-data)
+app.put('/api/admin/products/:id', upload.single('imageFile'), async (req, res) => {
     try {
+        const body = req.body || {};
         const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-        if (req.body.password !== adminPassword) {
+        if (body.password !== adminPassword) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
         const { id } = req.params;
-        const { title, description, price, category, subCategory, image } = req.body;
+        const { title, description, price, category, subCategory, image } = body;
 
         let imageBuffer = null;
         let imageMimeType = null;
-        if (image) {
-            // Handle both data URL and raw base64 formats
+        if (req.file && req.file.buffer) {
+            imageBuffer = req.file.buffer;
+            imageMimeType = req.file.mimetype || 'image/jpeg';
+            console.log('Update: Image uploaded using multipart:', req.file.originalname, imageMimeType, ', size:', imageBuffer.length);
+        } else if (image) {
             const match = image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
             if (match) {
                 imageMimeType = match[1];
                 imageBuffer = Buffer.from(match[2], 'base64');
                 console.log('Update: Image processed from data URL, size:', imageBuffer.length);
             } else if (typeof image === 'string') {
-                // Try to parse as base64 directly
                 try {
                     imageBuffer = Buffer.from(image, 'base64');
-                    imageMimeType = 'image/jpeg'; // Default if not specified
+                    imageMimeType = 'image/jpeg';
                     console.log('Update: Image processed from raw base64, size:', imageBuffer.length);
                 } catch (e) {
                     console.error('Failed to process image during update:', e);

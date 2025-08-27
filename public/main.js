@@ -623,27 +623,43 @@ async function handleAdminFormSubmit(form, status) {
     const imageInput = form.querySelector('input[type="file"]');
     const imageFile = imageInput.files[0];
 
-    const data = {
-        title: fd.get('title'),
-        description: fd.get('description'),
-        price: fd.get('price'),
-        category: fd.get('category'),
-        subCategory: fd.get('subCategory'),
-        password: fd.get('password'),
-        image: null
-    };
-
-    const sendRequest = async (body) => {
-        try {
-            const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
-            const method = editingProductId ? 'PUT' : 'POST';
-
-            const res = await fetch(url, { 
-                method: method, 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body) 
+    // Use FormData for multipart submission if image, else fallback to legacy JSON
+    const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
+    const method = editingProductId ? 'PUT' : 'POST';
+    let success = false;
+    try {
+        if (imageFile) {
+            // Append input names to fd as expected by backend: multer looks for 'imageFile'
+            fd.set('imageFile', imageFile);
+            // Remove possible legacy field
+            fd.delete('image');
+            // Submit with multipart/form-data (browser auto-sets boundary)
+            const res = await fetch(url, {
+                method,
+                body: fd
             });
             if (!res.ok) throw new Error(editingProductId ? 'Update failed' : 'Upload failed');
+            success = true;
+        } else {
+            // Legacy fallback: send as JSON
+            const data = {
+                title: fd.get('title'),
+                description: fd.get('description'),
+                price: fd.get('price'),
+                category: fd.get('category'),
+                subCategory: fd.get('subCategory'),
+                password: fd.get('password'),
+                image: null
+            };
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error(editingProductId ? 'Update failed' : 'Upload failed');
+            success = true;
+        }
+        if (success) {
             status.textContent = editingProductId ? 'Updated!' : 'Uploaded!';
             form.reset();
             delete form.dataset.editingProductId;
@@ -652,19 +668,8 @@ async function handleAdminFormSubmit(form, status) {
             await renderAdminProducts();
             await renderSections();
             await updateFeaturedCounts();
-        } catch (err) {
-            status.textContent = 'Error: ' + err.message;
         }
-    };
-
-    if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = () => {
-            data.image = reader.result;
-            sendRequest(data);
-        };
-        reader.readAsDataURL(imageFile);
-    } else {
-        sendRequest(data);
+    } catch (err) {
+        status.textContent = 'Error: ' + err.message;
     }
 }
