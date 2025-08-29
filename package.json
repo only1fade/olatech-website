@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "dependencies": {
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "serverless-http": "^3.2.0"
   }
 }
