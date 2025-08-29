@@ -55,7 +55,7 @@
                     <label>Admin Password</label>
                     <input required name="password" type="password" placeholder="admin123" />
                 </div>
-                <button class="btn" type="submit">Upload</button>
+                <button class="btn" type="button" id="trigger-upload">Upload</button>
                 <div id="admin-status"></div>
             </form>
         </section>
@@ -84,34 +84,33 @@
         </section>
     </main>
     <script src="/main.js"></script>
-    <!-- Cloudinary Widget Script -->
     <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
     <script>
-      // Cloudinary config
-      const cloudName = 'dep0ppnax';
-      const uploadPreset = 'olatech';
-      // Open widget on button click
-      document.getElementById('upload_widget_opener').addEventListener('click', function() {
-        cloudinary.openUploadWidget(
-          {
-            cloudName: cloudName,
-            uploadPreset: uploadPreset,
-            sources: ['local', 'url', 'camera', 'image_search', 'facebook', 'dropbox', 'instagram'],
-            multiple: false,
-            cropping: false
-          },
-          function(error, result) {
-            if (!error && result && result.event === "success") {
-              // Set hidden input value to uploaded image URL
-              document.getElementById('imageurl').value = result.info.secure_url;
-              // Show image preview
-              const img = document.getElementById('preview');
-              img.src = result.info.secure_url;
-              img.style.display = 'block';
+    document.getElementById('trigger-upload').onclick = function(e) {
+      e.preventDefault();
+      var form = document.getElementById('admin-form');
+      var imageUrlInput = document.getElementById('imageurl');
+      var preview = document.getElementById('preview');
+      cloudinary.openUploadWidget(
+        {
+          cloudName: 'dep0ppnax',
+          uploadPreset: 'olatech',
+          sources: ['local', 'url', 'camera', 'image_search'],
+          multiple: false,
+          cropping: false
+        },
+        function(error, result) {
+          if (!error && result && result.event === "success") {
+            imageUrlInput.value = result.info.secure_url;
+            if (preview) {
+              preview.src = result.info.secure_url;
+              preview.style.display = 'block';
             }
+            form.submit();
           }
-        );
-      });
+        }
+      );
+    };
     </script>
 </body>
 </html>
