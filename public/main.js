@@ -620,28 +620,14 @@ async function handleAdminFormSubmit(form, status) {
     const editingProductId = form.dataset.editingProductId;
     status.textContent = editingProductId ? 'Updating...' : 'Uploading...';
     const fd = new FormData(form);
-    const imageInput = form.querySelector('input[type="file"]');
-    const imageFile = imageInput.files[0];
-
-    // Use FormData for multipart submission if image, else fallback to legacy JSON
+    const imageUrl = form.querySelector('#imageurl') ? form.querySelector('#imageurl').value : '';
+    // Use JSON for submission, always use Cloudinary image URL (do NOT use file input)
     const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
     const method = editingProductId ? 'PUT' : 'POST';
     let success = false;
     try {
-        if (imageFile) {
-            // Append input names to fd as expected by backend: multer looks for 'imageFile'
-            fd.set('imageFile', imageFile);
-            // Remove possible legacy field
-            fd.delete('image');
-            // Submit with multipart/form-data (browser auto-sets boundary)
-            const res = await fetch(url, {
-                method,
-                body: fd
-            });
-            if (!res.ok) throw new Error(editingProductId ? 'Update failed' : 'Upload failed');
-            success = true;
-        } else {
-            // Legacy fallback: send as JSON
+        // Only submit if there is an image url
+        if (imageUrl && imageUrl.trim() !== '') {
             const data = {
                 title: fd.get('title'),
                 description: fd.get('description'),
@@ -649,7 +635,7 @@ async function handleAdminFormSubmit(form, status) {
                 category: fd.get('category'),
                 subCategory: fd.get('subCategory'),
                 password: fd.get('password'),
-                image: null
+                image: imageUrl
             };
             const res = await fetch(url, {
                 method,
@@ -658,6 +644,9 @@ async function handleAdminFormSubmit(form, status) {
             });
             if (!res.ok) throw new Error(editingProductId ? 'Update failed' : 'Upload failed');
             success = true;
+        } else {
+            status.textContent = 'Please upload an image using the Cloudinary widget.';
+            return;
         }
         if (success) {
             status.textContent = editingProductId ? 'Updated!' : 'Uploaded!';
