@@ -1,31 +1,8 @@
 {
-  "name": "olatech-properties-assets",
+  "name": "olatech-project",
   "version": "1.0.0",
-  "description": "Simple ecommerce site for Olatech Properties & Assets with admin uploads and bank transfer checkout",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
-  "keywords": [
-    "ecommerce",
-    "properties",
-    "assets",
-    "node",
-    "express"
-  ],
-  "author": "",
-  "license": "MIT",
+  "description": "",
   "dependencies": {
-    "@netlify/neon": "^0.1.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-session": "^1.17.3",
-    "multer": "^2.0.2",
-    "serverless-http": "^3.2.0",
-    "uuid": "^9.0.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
+    "pg": "^8.11.3"
   }
 }
