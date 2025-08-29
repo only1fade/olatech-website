@@ -91,6 +91,7 @@
       var form = document.getElementById('admin-form');
       var imageUrlInput = document.getElementById('imageurl');
       var preview = document.getElementById('preview');
+      var status = document.getElementById('admin-status');
       cloudinary.openUploadWidget(
         {
           cloudName: 'dep0ppnax',
@@ -106,7 +107,26 @@
               preview.src = result.info.secure_url;
               preview.style.display = 'block';
             }
-            form.submit();
+            // Now collect form data and send via fetch
+            const formData = new FormData(form);
+            fetch('/.netlify/functions/addProduct', {
+              method: 'POST',
+              body: formData
+            })
+            .then(response => {
+              if (!response.ok) throw new Error('Network response was not ok');
+              return response.json();
+            })
+            .then(data => {
+              alert('Product uploaded successfully!');
+              form.reset();
+              if (preview) preview.style.display = 'none';
+            })
+            .catch(err => {
+              alert('Error uploading product: ' + err.message);
+            });
+          } else if (error) {
+            alert('Cloudinary upload failed. Please try again.');
           }
         }
       );
