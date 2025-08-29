@@ -355,7 +355,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     ensureWhatsAppFab();
     await renderSections();
     await renderCart();
-    setupAdminForm();
     setupCartButtons();
     setupParallax();
     setupRevealObserver();
@@ -367,6 +366,83 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupAdminProductActions();
     setupAdminProductSearch();
     setupShowMoreButton();
+
+    // --- Cloudinary widget and admin form submit fix ---
+    const form = document.getElementById('admin-form');
+    const status = document.getElementById('admin-status');
+    const imageUrlInput = document.getElementById('cloudinary-url');
+    const widgetBtn = document.getElementById('upload_widget_opener');
+    const preview = document.getElementById('preview');
+    let uploading = false;
+
+    if (form && imageUrlInput && widgetBtn) {
+      widgetBtn.addEventListener('click', function () {
+        uploading = true;
+        cloudinary.openUploadWidget(
+          {
+            cloudName: 'dep0ppnax', // Your Cloudinary Cloud Name
+            uploadPreset: 'olatech', // Your unsigned upload preset
+            sources: ['local', 'url', 'camera', 'image_search'],
+            multiple: false,
+            cropping: false
+          },
+          function (error, result) {
+            uploading = false;
+            if (!error && result && result.event === "success") {
+              imageUrlInput.value = result.info.secure_url;
+              if (preview) {
+                preview.src = result.info.secure_url;
+                preview.style.display = 'block';
+              }
+            }
+          }
+        );
+      });
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (uploading) {
+          status.textContent = 'Please finish image upload before submitting.';
+          return;
+        }
+        const cloudUrl = imageUrlInput.value;
+        if (!cloudUrl || !cloudUrl.startsWith('http')) {
+          status.textContent = 'Please upload an image using the Cloudinary widget.';
+          return;
+        }
+        // Prepare JSON payload
+        const fd = new FormData(form);
+        const data = {
+          title: fd.get('title'),
+          description: fd.get('description'),
+          price: fd.get('price'),
+          category: fd.get('category'),
+          subCategory: fd.get('subCategory'),
+          password: fd.get('password'),
+          imageurl: cloudUrl
+        };
+        const editingProductId = form.dataset.editingProductId;
+        const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
+        const method = editingProductId ? 'PUT' : 'POST';
+        status.textContent = editingProductId ? 'Updating...' : 'Uploading...';
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (!res.ok) throw new Error(editingProductId ? 'Update failed' : 'Upload failed');
+          status.textContent = editingProductId ? 'Updated!' : 'Uploaded!';
+          form.reset();
+          if (preview) preview.style.display = 'none';
+          delete form.dataset.editingProductId;
+          form.querySelector('button[type="submit"]').textContent = 'Upload';
+        } catch (err) {
+          status.textContent = 'Error: ' + err.message;
+        }
+      });
+    }
+    // --- END Cloudinary/admin submit fix ---
 
     // Hamburger toggle for mobile nav
     const nav = document.querySelector('.nav');
