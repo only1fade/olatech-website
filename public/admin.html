@@ -42,7 +42,14 @@
                 </div>
                 <div class="form-row">
                     <label>Image</label>
-                    <input type="file" name="image" accept="image/*" />
+                    <!-- Cloudinary Integration Start -->
+                    <!-- Hidden input for uploaded image URL -->
+                    <input type="hidden" id="imageurl" name="imageurl" />
+                    <!-- Button to trigger Cloudinary widget -->
+                    <button type="button" id="upload_widget_opener" class="btn">Upload Image</button>
+                    <!-- Image preview -->
+                    <img id="preview" src="" alt="Image Preview" style="margin-top:10px; max-width:200px; display:none;">
+                    <!-- Cloudinary Integration End -->
                 </div>
                 <div class="form-row">
                     <label>Admin Password</label>
@@ -77,5 +84,34 @@
         </section>
     </main>
     <script src="/main.js"></script>
+    <!-- Cloudinary Widget Script -->
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
+    <script>
+      // Cloudinary config
+      const cloudName = 'dep0ppnax';
+      const uploadPreset = 'olatech';
+      // Open widget on button click
+      document.getElementById('upload_widget_opener').addEventListener('click', function() {
+        cloudinary.openUploadWidget(
+          {
+            cloudName: cloudName,
+            uploadPreset: uploadPreset,
+            sources: ['local', 'url', 'camera', 'image_search', 'facebook', 'dropbox', 'instagram'],
+            multiple: false,
+            cropping: false
+          },
+          function(error, result) {
+            if (!error && result && result.event === "success") {
+              // Set hidden input value to uploaded image URL
+              document.getElementById('imageurl').value = result.info.secure_url;
+              // Show image preview
+              const img = document.getElementById('preview');
+              img.src = result.info.secure_url;
+              img.style.display = 'block';
+            }
+          }
+        );
+      });
+    </script>
 </body>
 </html>
