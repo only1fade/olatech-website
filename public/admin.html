@@ -107,14 +107,22 @@
               preview.src = result.info.secure_url;
               preview.style.display = 'block';
             }
-            // Now collect form data and send via fetch
+            // Now collect form data and send via fetch AS JSON with improved error logging
             const formData = new FormData(form);
+            const jsonData = {};
+            formData.forEach((value, key) => { jsonData[key] = value; });
+
             fetch('/.netlify/functions/addProduct', {
               method: 'POST',
-              body: formData
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(jsonData)
             })
             .then(response => {
-              if (!response.ok) throw new Error('Network response was not ok');
+              if (!response.ok) {
+                return response.text().then(text => {
+                  throw new Error(`HTTP error! status: ${response.status} Body: ${text}`);
+                });
+              }
               return response.json();
             })
             .then(data => {
