@@ -181,9 +181,56 @@ function setupAdminForm() {
         categorySelect.addEventListener('change', toggleSubcat);
         toggleSubcat();
     }
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        handleAdminFormSubmit(form, status);
+
+        // Get Cloudinary image URL from hidden input
+        const imageUrl = form.querySelector('#imageurl') ? form.querySelector('#imageurl').value : '';
+        if (!imageUrl || !imageUrl.startsWith('http')) {
+            status.textContent = 'Please upload an image using the Upload Image button (Cloudinary widget).';
+            return;
+        }
+
+        // Gather all other fields
+        const fd = new FormData(form);
+
+        // Prepare product data from form as JSON
+        const data = {
+            title: fd.get('title'),
+            description: fd.get('description'),
+            price: fd.get('price'),
+            category: fd.get('category'),
+            subCategory: fd.get('subCategory'),
+            password: fd.get('password'),
+            image: imageUrl   // Use Cloudinary URL here!
+        };
+
+        // Decide method and URL depending on edit/create mode
+        const editingProductId = form.dataset.editingProductId;
+        const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
+        const method = editingProductId ? 'PUT' : 'POST';
+
+        status.textContent = editingProductId ? 'Updating...' : 'Uploading...';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error(editingProductId ? 'Update failed' : 'Upload failed');
+            status.textContent = editingProductId ? 'Updated!' : 'Uploaded!';
+            form.reset();
+            delete form.dataset.editingProductId;
+            form.querySelector('button[type="submit"]').textContent = 'Upload';
+            // Optionally refresh tables/UI, etc.
+            allProductsCache = []; // Invalidate the cache
+            await renderAdminProducts();
+            await renderSections();
+            await updateFeaturedCounts();
+        } catch (err) {
+            status.textContent = 'Error: ' + err.message;
+        }
     });
 }
 
