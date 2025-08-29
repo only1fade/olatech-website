@@ -55,11 +55,12 @@ async function setupDatabase() {
 app.get('/api/products', async (req, res) => {
     try {
         const { category, subCategory } = req.query;
+        // Always select imageurl as text
         let products;
         if (category) {
-            products = await sql`SELECT * FROM products WHERE category = ${category}`;
+            products = await sql`SELECT id, title, description, price, category, subCategory, imageurl::text as imageurl FROM products WHERE category = ${category}`;
         } else {
-            products = await sql`SELECT * FROM products`;
+            products = await sql`SELECT id, title, description, price, category, subCategory, imageurl::text as imageurl FROM products`;
         }
 
         // Ensure products is an array
@@ -69,34 +70,13 @@ app.get('/api/products', async (req, res) => {
         if (subCategory) {
             filteredProducts = productsArray.filter(p => p.subcategory === subCategory);
         }
+        // Remove all binary processing. imageurl is already a string.
+        const cleanedProducts = filteredProducts.map(product => ({
+            ...product,
+            imageurl: product.imageurl ? String(product.imageurl) : ''
+        }));
 
-        console.log('Products retrieved from DB:', filteredProducts.map(p => ({ 
-            id: p.id, 
-            title: p.title, 
-            imageMimeType: p.imageMimeType, 
-            imageUrl_type: typeof p.imageUrl,
-            imageUrl_length: p.imageUrl ? p.imageUrl.length : 0
-        })));
-
-        const productsWithImages = filteredProducts.map(product => {
-            // Check if imageUrl exists and is a Buffer or Uint8Array
-            if (product.imageUrl) {
-                // Handle both Buffer and string cases for compatibility
-                const imageBuffer = Buffer.isBuffer(product.imageUrl) ? 
-                    product.imageUrl : 
-                    (typeof product.imageUrl === 'string' && product.imageUrl.startsWith('data:') ? 
-                        product.imageUrl : 
-                        Buffer.from(product.imageUrl));
-                
-                // Only convert to base64 if it's not already a data URL
-                if (Buffer.isBuffer(imageBuffer) || (typeof imageBuffer !== 'string' || !imageBuffer.startsWith('data:'))) {
-                    product.imageUrl = `data:${product.imageMimeType || 'image/jpeg'};base64,${Buffer.from(imageBuffer).toString('base64')}`;
-                }
-            }
-            return product;
-        });
-
-        res.json(productsWithImages);
+        res.json(cleanedProducts);
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ error: 'Failed to fetch products' });
