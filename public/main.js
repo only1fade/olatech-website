@@ -29,37 +29,15 @@ function formatCurrency(amount) {
 
 function productCard(product) {
     const div = document.createElement('div');
-    div.className = 'card';
-    div.setAttribute('data-animate', 'reveal');
-    
-    // Handle image URL more robustly
-    let imageUrl = 'https://via.placeholder.com/400x300?text=Olatech';
-    if (product.imageUrl) {
-        // Make sure the image URL is properly formatted
-        if (typeof product.imageUrl === 'string') {
-            if (product.imageUrl.startsWith('data:')) {
-                imageUrl = product.imageUrl;
-            } else {
-                // Try to handle case where it might be a raw base64 string
-                try {
-                    imageUrl = `data:${product.imageMimeType || 'image/jpeg'};base64,${product.imageUrl}`;
-                } catch (e) {
-                    console.error('Failed to process image URL:', e);
-                }
-            }
-        }
-    }
-    
+    div.className = 'product';
+    // Always show the direct image URL from product.imageurl, fallback to placeholder.
+    const imgSrc = product.imageurl || 'https://via.placeholder.com/400x300?text=No+Image';
     div.innerHTML = `
-        <img src="${imageUrl}" alt="${product.title}" onerror="this.src='https://via.placeholder.com/400x300?text=Olatech'">
-        <div class="content">
-            <div><strong>${product.title}</strong></div>
-            <div class="price">${formatCurrency(product.price)}</div>
-            <div style="min-height: 42px; color: #94a3b8">${product.description || ''}</div>
-            <button class="btn" data-add="${product.id}">Add to cart</button>
-        </div>
+        <img src="${imgSrc}" alt="${product.title}">
+        <h3>${product.title}</h3>
+        <p>${formatCurrency(product.price)}</p>
+        <div style="min-height: 42px; color: #94a3b8">${product.description || ''}</div>
     `;
-    div.querySelector('[data-add]').addEventListener('click', () => addToCart(product.id));
     return div;
 }
 
